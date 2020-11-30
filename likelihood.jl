@@ -19,6 +19,37 @@ function ∇chi_squared(model::Vector{T}, dmodel::Matrix{T}, data::Vector{T}, er
     end
 end
 
+# Bounds for optimizer
+function get_upper_open(elements)
+    m,P,t0,ecosϖ,esinϖ,I,Ω = unpack_elements(elements)
+    N = length(m)
+    ms = 2.0 .* m[:]
+    Ps = 5.0 .* P[:]
+    t0s = t0[:] .+ (1.1 .* Ps[:])
+    ecs = ones(N)
+    ess = ones(N)
+    Is = ones(N) .* π
+    Is[1] = (π/2 + π/6)
+    Ωs = ones(N) .* π
+    return [ms...,Ps...,t0s...,ecs...,ess...,Is...,Ωs...]
+end
+
+function get_lower_open(elements)
+    m,P,t0,ecosϖ,esinϖ,I,Ω = unpack_elements(elements)
+    N = length(m)
+    ms = ones(N) .* 1e-10
+    Ps = ones(N) .* 0.5
+    t0s = t0[:] .- (2.0 .* Ps[:])
+    ecs = -ones(N)
+    ess = -ones(N)
+    Is = zeros(N)
+    Is[1] = (π/2 - π/6)
+    Ωs = ones(N) .* -π
+    return [ms...,Ps...,t0s...,ecs...,ess...,Is...,Ωs...]
+end  
+
+unpack_elements(el) = [el[:,i] for i in 1:7]
+
 function logP(lnlike::Function, elements::Matrix{T}, H::Vector{Int64}, data::TimingData, t0::T, 
     intr::Integrator; parameter_mask=nothing, grad::Bool=true) where T <: Real
     
